@@ -9,10 +9,10 @@ export default function Header(){
         <h1 className="text-3xl font-bold">RoomBook</h1>
       </div>
       <div className="flex items-center justify-between space-x-10">
-        <Link to="/Features" className="font-medium hover:text-blue-600">Features</Link>
-        <Link to="/About Us" className="font-medium hover:text-blue-600">About Us</Link>
+        <Link to="/features" className="font-medium hover:text-blue-600">Features</Link>
+        <Link to="/about" className="font-medium hover:text-blue-600">About Us</Link>
         <Link to="/login" className=" bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 active:bg-gray-700 transition">Login</Link>
-        <Link to="/Signup" className="bg-blue-800  text-white px-4 py-2 rounded-md hover:bg-blue-600 active:bg-blue-900 transition">SignUp</Link>
+        <Link to="/signup" className="bg-blue-800  text-white px-4 py-2 rounded-md hover:bg-blue-600 active:bg-blue-900 transition">SignUp</Link>
       </div>
     </div>
   );
