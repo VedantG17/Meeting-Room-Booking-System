@@ -46,7 +46,11 @@ class VerifyOtpSerializer(serializers.Serializer):
     )
     return employee
   
-  
+class EmployeeSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Employee
+    fields = ['name', 'email', 'employee_id']
+
 
 
 

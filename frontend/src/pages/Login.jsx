@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext,useState} from 'react';
+import { useNavigate } from 'react-router-dom'; 
+import { AuthContext } from '../context/AuthContext';
 
 export default function Login() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+  
+  const [errorMessage,setErrorMessage] = useState('');
+  const {login} = useContext(AuthContext);
+  const navigate = useNavigate();
 
 
   const handleChange = (e) => {
@@ -16,10 +21,25 @@ export default function Login() {
     }));
   };
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   console.log("Login submitted!", formData);
-    // Add your login logic here (e.g., API call)
+  const handleSubmit = async(e)=> {
+    e.preventDefault();
+    setErrorMessage('');
+
+    try{
+      const result = await login(formData.email,formData.password);
+      console.log(result)
+      if(!result.success){
+        setErrorMessage(result.message || 'Login failed. Please check your credentials.');
+        alert("Wrong credentials");
+      }else{
+        navigate('/dashboard');
+      }
+      }catch(error){
+        setErrorMessage('An unexpected error occurred during login. Please try again.');
+        console.error('Login error:', error);
+
+      }
+  };
   
 
   return (
@@ -27,7 +47,7 @@ export default function Login() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
         <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
           <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Login</h2>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label className="block text-gray-700 text-m font-medium mb-2">Email</label>
               <input

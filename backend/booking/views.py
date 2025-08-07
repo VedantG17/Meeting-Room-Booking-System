@@ -2,8 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 #req for validation 
-from .models import OtpModels
-from .serializers import RegistrationSerializer, VerifyOtpSerializer
+from .models import OtpModels,Employee,Booking
+from .serializers import RegistrationSerializer, VerifyOtpSerializer,BookingParticipant,EmployeeSerializer
 import random
 from django.core.mail import send_mail
 from django.conf import settings
@@ -66,11 +66,16 @@ def verify_otp(request):
   )
 
 @api_view(['POST'])
-def login(requst):
+def login(request):
   email = request.data.get('email')
   password = request.data.get('password')
+  if not email or not password:
+    return Response(
+      {'success': False, 'message': 'Email and password are required'},
+      status=status.HTTP_400_BAD_REQUEST
+    )
   try:
-    employee = Employee.object.get(email = email)
+    employee = Employee.objects.get(email = email)
     if check_password(password, employee.password_hash):
       return Response(
         {'success': True, 'message': 'Login successful', 'employee_id': employee.employee_id},
@@ -85,3 +90,68 @@ def login(requst):
         {'success': False, 'message': 'User not found'},
         status=status.HTTP_400_BAD_REQUEST
       )
+  
+@api_view(['GET'])
+def user_profile(request,employee_id):
+  try:
+    employee_obj = Employee.objects.get(employee_id=employee_id)
+    created_bookings = Booking.objects.filter(creator_employee=employee_obj)  #(fk=modelobj) -> pk of the table fk islinked to  == pk of Modelobj
+    participant_links = BookingParticipant.objects.filter(employee=employee_obj)
+    participant_booking = Booking.objects.filter(id__in = participant_links.values('booking'))
+    past_bookings = (created_bookings | participant_booking).filter(end_time__lt=timezone.now()).distinct() 
+    future_bookings = (created_bookings | participant_booking).filter(end_time__gte=timezone.now()).distinct()
+    
+    past_booking_data = [
+      {
+        'id': booking.id,
+        'title': booking.room.name,
+        'room': booking.room.name,
+        'location': booking.room.location,
+        'start_time': booking.start_time.isoformat(),
+        'end_time': booking.end_time.isoformat(),
+        'role': 'Creator' if booking.creator_employee == employee_obj else 'Participant',
+        'participants': [
+            {'id': p.id, 'name': p.employee.name if p.employee else p.guest.name}
+            for p in booking.bookingparticipant_set.all()
+        ]
+      }for booking in past_bookings
+    ]
+
+    future_booking_data = [
+      {
+        'id': booking.id,
+        'title': booking.room.name,
+        'room': booking.room.name,
+        'location': booking.room.location,
+        'start_time': booking.start_time.isoformat(),
+        'end_time': booking.end_time.isoformat(),
+        'role': 'Creator' if booking.creator_employee == employee_obj else 'Participant',
+        'participants': [
+            {'id': p.id, 'name': p.employee.name if p.employee else p.guest.name}
+            for p in booking.bookingparticipant_set.all()
+        ] 
+      }for booking in future_bookings 
+    ]
+
+    serializer = EmployeeSerializer(employee_obj)
+    return Response({
+      'success':True,
+      'data':{
+        'employee': serializer.data,
+        'past_bookings': past_booking_data,
+        'future_bookings': future_booking_data
+      }, 
+    },status=status.HTTP_200_OK   
+    )
+
+  except Employee.DoesNotExist:
+    return Response({
+      'success':False,
+      'message':"User not found"
+    },status = status.HTTP_404_NOT_FOUND
+    )
+
+
+
+
+    
