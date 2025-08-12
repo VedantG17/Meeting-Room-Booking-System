@@ -50,7 +50,7 @@ class Booking(models.Model):
       return f"{self.room.name} | {self.start_time.strftime('%Y-%m-%d %H:%M')}"
     
 class BookingParticipant(models.Model):
-    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE,related_name="participants")
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
     guest = models.ForeignKey(Guest, on_delete=models.CASCADE,null=True, blank=True)
     notified = models.BooleanField(default=False)

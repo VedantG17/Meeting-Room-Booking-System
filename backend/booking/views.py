@@ -1,9 +1,10 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import models
 #req for validation 
-from .models import OtpModels,Employee,Booking
-from .serializers import RegistrationSerializer, VerifyOtpSerializer,BookingParticipant,EmployeeSerializer
+from .models import OtpModels,Employee,Booking,MeetingRoom
+from .serializers import RegistrationSerializer, VerifyOtpSerializer,BookingParticipant,EmployeeSerializer,MeetingRoomSerializers,DashboardMetricsSerializer
 import random
 from django.core.mail import send_mail
 from django.conf import settings
@@ -150,6 +151,73 @@ def user_profile(request,employee_id):
       'message':"User not found"
     },status = status.HTTP_404_NOT_FOUND
     )
+
+@api_view(['GET'])
+def list_rooms(request):
+  rooms = MeetingRoom.objects.all()
+  serializer = MeetingRoomSerializers(rooms,many=True)
+  return Response({
+    'success':True,
+    'data':serializer.data
+  }, status = status.HTTP_200_OK)
+
+@api_view(['GET'])
+def dashboard_metrics(request,employee_id):
+  try:
+    employee = Employee.objects.get(employee_id=employee_id)
+  except Employee.DoesNotExist:
+    return Response({'success': False, 'message': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+  
+  now = timezone.now()
+  today_start =  now.replace(hour=0,minute=0,second=0,microsecond=0)
+  today_end = today_start+ timedelta(days=1)
+  next_week_start = today_start + timedelta(days=7)
+  next_week_end = next_week_start + timedelta(days=7)
+  total_rooms = MeetingRoom.objects.count()
+
+  bookings_today = Booking.objects.filter(
+    start_time__lt = today_end,
+    end_time__gt = today_start, 
+  )
+
+  bookedrooms_today_id = bookings_today.values_list('room_id',flat=True).distinct()
+  available_rooms = total_rooms - bookedrooms_today_id.count()
+
+  meetings_today = bookings_today.filter(
+    models.Q(creator_employee=employee) | models.Q(participants__employee=employee)
+  ).distinct().count()
+
+  meetings_next_week = Booking.objects.filter(
+        start_time__gte=next_week_start,
+        start_time__lt=next_week_end,
+    ).filter(
+        models.Q(creator_employee=employee) | 
+        models.Q(participants__employee=employee)
+    ).distinct().count()
+  
+  data = {
+        'availableRooms': available_rooms,
+        'totalRooms': total_rooms,
+        'todaysMeetings': meetings_today,
+        'nextWeekMeetings': meetings_next_week,
+    }
+  
+  serializer = DashboardMetricsSerializer(data=data)
+  serializer.is_valid(raise_exception=True)
+  return Response({'success':'True','data':serializer.data},status = status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

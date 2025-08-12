@@ -1,8 +1,10 @@
-import React, { createContext, useState, useEffect} from 'react';
+import React, { createContext, useState, useEffect,useContext} from 'react';
 import axios from 'axios';
 
 export const AuthContext = createContext();
-
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
 export const AuthProvider = ({children}) =>{
 
   const [user,setUser] = useState(null);
@@ -92,10 +94,12 @@ export const AuthProvider = ({children}) =>{
 
 
   }
+  
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>
         {children}
     </AuthContext.Provider>
 );
 }
+
 

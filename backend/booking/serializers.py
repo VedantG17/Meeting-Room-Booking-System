@@ -51,7 +51,17 @@ class EmployeeSerializer(serializers.ModelSerializer):
     model = Employee
     fields = ['name', 'email', 'employee_id']
 
+class MeetingRoomSerializers(serializers.ModelSerializer):
+  class Meta:
+    model = MeetingRoom
+    fields = ['id', 'name', 'location', 'capacity']
 
+class DashboardMetricsSerializer(serializers.Serializer):
+    availableRooms = serializers.IntegerField()
+    totalRooms = serializers.IntegerField()
+    todaysMeetings = serializers.IntegerField()
+    nextWeekMeetings = serializers.IntegerField()
+    
 
 
 
