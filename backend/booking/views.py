@@ -205,21 +205,3 @@ def dashboard_metrics(request,employee_id):
   serializer = DashboardMetricsSerializer(data=data)
   serializer.is_valid(raise_exception=True)
   return Response({'success':'True','data':serializer.data},status = status.HTTP_200_OK)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    

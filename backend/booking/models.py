@@ -43,9 +43,16 @@ class Booking(models.Model):
     room = models.ForeignKey(MeetingRoom, on_delete=models.CASCADE)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
+    title = models.CharField(max_length=255, blank=True)          
+    description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+      indexes = [
+        models.Index(fields=["room", "start_time"]),
+        models.Index(fields=["room", "end_time"]),
+    ]
     def __str__(self):
       return f"{self.room.name} | {self.start_time.strftime('%Y-%m-%d %H:%M')}"
     
