@@ -76,9 +76,9 @@ class BookingCreateSerializer(serializers.Serializer):
   title = serializers.CharField(allow_blank=True,required=False)
   description = serializers.CharField(allow_blank=True,required=False)
   participants = serializers.ListField(
-    child = serializers.EmailField(),required =False ,allow_empty=True #list of participants
+    child=serializers.EmailField(),required =False ,allow_empty=True #list of participants child= correct child space = error
   )
-  
+
   def validate(self,data):
     from django.utils import timezone
     start = data['start_time']
