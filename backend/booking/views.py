@@ -12,6 +12,8 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
+from datetime import datetime,timedelta
+from django.db.models import Q
  
 
 @api_view(['POST'])
@@ -205,3 +207,44 @@ def dashboard_metrics(request,employee_id):
   serializer = DashboardMetricsSerializer(data=data)
   serializer.is_valid(raise_exception=True)
   return Response({'success':'True','data':serializer.data},status = status.HTTP_200_OK)
+
+
+#utilities
+
+#storing zone aware datetime 
+def _parse_iso(iso_str :str):
+  dt = datetime.fromisoformat(iso_str.place('Z','+00:00'))
+  if timezone.is_naive(dt):
+    dt = timezone.make_aware(dt)
+  return dt
+
+def _overlapcheck(start,end): #new meeting timings
+  return Q(start_time__lt = end) & Q(end_time__gt = start) 
+#--------------------------------------------------------------------------------------------
+
+@api_view(['GET'])
+def available_rooms(request):
+  start_iso  = request.GET.get('start')
+  end_iso = request.GET.get('end')
+
+  qs = MeetingRoom.objects.all()
+  if start_iso and end_iso:
+    try:
+      start = _parse_iso(start_iso)
+      end = _parse_iso(end_iso)
+    except Exception:
+      return Response({"success":False,"message":"The entered start and end time was not in ISO(1680) format so parsing function didnt work"},status =400)
+
+    # start and end time of slots(zone aware) Recieved in Datetime object python
+
+    if(end<=start):
+      return Response({"success":False,"message":"end must be greater than start"},status=400)
+    
+    busy_ids = Booking.objects.filter(_overlapcheck(start,end)).value_list('room_id',flat=True).distinct()
+    qs = qs.exclude(id__in = busy_ids)
+  else:
+    pass
+
+  return Response({"success":True,"data":MeetingRoomSerializers(qs,many=True).data},status=200)
+
+

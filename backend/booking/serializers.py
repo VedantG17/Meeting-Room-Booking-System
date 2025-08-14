@@ -61,7 +61,46 @@ class DashboardMetricsSerializer(serializers.Serializer):
     totalRooms = serializers.IntegerField()
     todaysMeetings = serializers.IntegerField()
     nextWeekMeetings = serializers.IntegerField()
-    
+
+class AvailabilitySlotSerializer(serializers.Serializer):
+  id = serializers.IntegerField()
+  start_time = serializers.DateField()
+  end_time =  serializers.DateField()
+  booked_by = serializers.CharField()
+  title = serializers.CharField(allow_blank=True,required=False)
+
+class BookingCreateSerializer(serializers.Serializer):
+  room_id = serializers.IntegerField()
+  start_time = serializers.DateTimeField()
+  end_time = serializers.DateTimeField()
+  title = serializers.CharField(allow_blank=True,required=False)
+  description = serializers.CharField(allow_blank=True,required=False)
+  participants = serializers.ListField(
+    child = serializers.EmailField(),required =False ,allow_empty=True #list of participants
+  )
+  
+  def validate(self,data):
+    from django.utils import timezone
+    start = data['start_time']
+    end = data['end_time']
+    if end< timezone.now():
+      raise serializers.ValidationError("Cant book meeting in past ")
+    if end<=start:
+      raise serializers.ValidationError("End time must be after start time.")
+    if (end - start).total_seconds() >= 24*3600:
+      raise serializers.ValidationError("Meeting duration cannot exceed 24 hours")
+    return data
+     
+
+
+
+
+
+
+  
+
+
+
 
 
 

@@ -8,6 +8,7 @@ urlpatterns = [
   path('user/<str:employee_id>/', user_profile, name='user_profile'),
   path('rooms/',list_rooms,name='list_rooms'),
   path('dashboard-metrics/<str:employee_id>/', dashboard_metrics, name='dashboard-metrics'),
+  
 
 
   
