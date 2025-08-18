@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db import models
 #req for validation 
-from .models import OtpModels,Employee,Booking,MeetingRoom
-from .serializers import RegistrationSerializer, VerifyOtpSerializer,BookingParticipant,EmployeeSerializer,MeetingRoomSerializers,DashboardMetricsSerializer
+from .models import OtpModels,Employee,Booking,MeetingRoom,Guest
+from .serializers import RegistrationSerializer, VerifyOtpSerializer,BookingParticipant,EmployeeSerializer,MeetingRoomSerializers,DashboardMetricsSerializer,BookingCreateSerializer
 import random
 from django.core.mail import send_mail
 from django.conf import settings
@@ -14,6 +14,8 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
 from datetime import datetime,timedelta
 from django.db.models import Q
+from django.db import transaction
+
  
 
 @api_view(['POST'])
@@ -115,7 +117,7 @@ def user_profile(request,employee_id):
         'role': 'Creator' if booking.creator_employee == employee_obj else 'Participant',
         'participants': [
             {'id': p.id, 'name': p.employee.name if p.employee else p.guest.name}
-            for p in booking.bookingparticipant_set.all()
+            for p in booking.participants.all()
         ]
       }for booking in past_bookings
     ]
@@ -213,13 +215,14 @@ def dashboard_metrics(request,employee_id):
 
 #storing zone aware datetime 
 def _parse_iso(iso_str :str):
-  dt = datetime.fromisoformat(iso_str.place('Z','+00:00'))
+  dt = datetime.fromisoformat(iso_str.replace('Z','+00:00'))
   if timezone.is_naive(dt):
     dt = timezone.make_aware(dt)
   return dt
 
 def _overlapcheck(start,end): #new meeting timings
-  return Q(start_time__lt = end) & Q(end_time__gt = start) 
+  return Q(start_time__lt = end) & Q(end_time__gt = start)
+
 #--------------------------------------------------------------------------------------------
 
 @api_view(['GET'])
@@ -240,11 +243,230 @@ def available_rooms(request):
     if(end<=start):
       return Response({"success":False,"message":"end must be greater than start"},status=400)
     
-    busy_ids = Booking.objects.filter(_overlapcheck(start,end)).value_list('room_id',flat=True).distinct()
+    busy_ids = Booking.objects.filter(_overlapcheck(start,end)).values_list('room_id',flat=True).distinct()
     qs = qs.exclude(id__in = busy_ids)
   else:
     pass
 
-  return Response({"success":True,"data":MeetingRoomSerializers(qs,many=True).data},status=200)
+  return Response({"success":True,"data":MeetingRoomSerializers(qs,many=True).data},status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def room_availibility(request, room_id:int):
+  date_str = request.GET.get('date')
+  if not date_str:
+    return Response({"success":True,"message":"datae is required"},status =status.HTTP_400_BAD_REQUEST)
+
+  try:
+    room = MeetingRoom.objects.get(id=room_id)
+  except MeetingRoom.DoesNotExist:
+    return Response({"success":False,"message": "Room not found"},status=status.HTTP_404_NOT_FOUND) 
+
+  try:
+    day = datetime.strptime(date_str,"%Y-%m-%d").date()
+  except ValueError:
+    return Response({"success": False, "message": "Invalid date format."}, status =status.HTTP_400_BAD_REQUEST)
+  day_start = timezone.make_aware(datetime.combine(day,datetime.min.time()))
+  day_end = day_start + timedelta(days=1)
+
+  bookings =  (Booking.objects.filter(room_id=room_id)
+               .filter(_overlapcheck(day_start, day_end))
+               .select_related('creator_employee')
+               .order_by('start_time')
+              )
+  data = [{
+    "id": i.id,
+    "start_time": i.start_time,
+    "end_time": i.end_time,
+    "booked_by": i.creator_employee.name,
+    "title":getattr(i,'title','') or ''
+  } for i in bookings]
+
+  return Response({"success": True, "data": data}, status=200)
+
+@api_view(['POST'])
+def book_room(request):
+  serializer = BookingCreateSerializer(data=request.data)
+  if not serializer.is_valid():
+    return Response({"success": False, "message": serializer.errors},status =status.HTTP_400_BAD_REQUEST)
+  
+  #we get this from frontend
+  data = serializer.validated_data
+  room_id = data['room_id']
+  date = data["date"]
+  start_time = data["start_time"]
+  end_time = data['end_time']
+  participants = data.get("participants",[])
+  title = data.get('title','')
+  description = data.get('description', '')
+
+  try:
+    room = MeetingRoom.objects.get(id= room_id)
+  except MeetingRoom.DoesNotExist:
+    return Response({"error":"No Such room exist"},status=status.HTTP_404_NOT_FOUND)
+  
+  start_dt = timezone.make_aware(datetime.combine(date,start_time))
+  end_dt = timezone.make_aware(datetime.combine(date,end_time))
+
+
+  conflicts =  Booking.objects.filter(
+    room = room,
+  ).filter(
+    _overlapcheck(start_dt,end_dt)
+  ).exists()
+
+  if conflicts:
+    return Response({"error":"This room is already booked during the requested time"},status=status.HTTP_409_CONFLICT)
+  
+  if len(participants)+1 >room.capacity:
+    return Response({"error":"no of participants more than room capacity"},status =status.HTTP_400_BAD_REQUEST)
+  
+  with transaction.atomic():
+    conflict_booking_locked = Booking.objects.select_for_update().filter(
+      room = room
+    ).filter( _overlapcheck(start_dt, end_dt))
+    if conflict_booking_locked.exists():
+      return Response(
+        {"error":"This room became unavailable during booking"},
+        status=status.HTTP_409_CONFLICT
+      )
+    booking = Booking.objects.create(
+      room = room,
+      creator_employee = request.user,
+      start_time=start_dt,
+      end_time = end_dt,
+      title=title,
+      description=description,  
+    )
+    for email in participants:
+      try:
+        emp = Employee.objects.get(email=email)
+        BookingParticipant.objects.create(booking=booking, employee=emp)
+      except Employee.DoesNotExist:
+        continue
+
+  return Response({
+     "message": "Room booked successfully",
+     "booking_id":booking.id,
+     "room":room.name,
+     "date":str(date),
+     "start_time":str(start_time),
+     "end_time":str(end_time),
+     "no of participants_added": len(participants),
+  },status = status.HTTP_201_CREATED)
+
+
+@api_view(['PUT'])
+def edit_booking(request,booking_id):
+  try:
+    booking = Booking.objects.get(id=booking_id)
+  except Booking.DoesNotExist:
+    return Response({"success": False, "message": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
+
+  if booking.creator_employee != request.user:
+    return Response({"success": False, "message": "Only creator can edit booking"},  status=status.HTTP_403_FORBIDDEN)
+  
+  start_time = request.data.get("start_time")
+  end_time = request.data.get("end_time")
+  title = request.data.get("title")
+  description = request.data.get("description")
+
+  try:
+    start_dt = _parse_iso(start_time) if start_time else booking.start_time
+    end_dt = _parse_iso(end_time) if end_time else booking.end_time
+
+  except Exception:
+    return Response({"success": False, "message": "Invalid datetime format"},status=status.HTTP_400_BAD_REQUEST)
+  
+  with transaction.atomic():
+    try:
+      booking = Booking.objects.select_for_update().get(id=booking.id)
+    except Booking.DoesNotExist:
+      return Response({"success":False,"messsage":"Booking not found"},status=status.HTTP_404_NOT_FOUND)
+    conflict = Booking.objects.filter(room = booking.room).exclude(id=booking.id).filter(_overlapcheck(start_dt, end_dt)).exists()
+    if conflict:
+      return Response({"success": False, "message": "Cannot Update time conflict with another booking"}, status=status.HTTP_409_CONFLICT)
+    
+    booking.start_time = start_dt
+    booking.end_time = end_dt
+    if title is not None:
+        booking.title = title
+    if description is not None:
+        booking.description = description
+    booking.save()
+  return Response({"success":True},status=status.HTTP_200_OK)  
+    
+@api_view(['POST'])
+def add_participants(request,booking_id):
+  email = request.data.get("participant")
+  if not email:
+    return Response({"success": False, "message": "Participant email is required"},status=status.HTTP_400_BAD_REQUEST)
+  try:
+    booking = Booking.objects.get(id=booking_id) 
+  except Booking.DoesNotExist:
+    return Response({"success": False, "message": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
+  if booking.creator_employee != request.user:
+    return Response({"success": False, "message": "Only creator can add participants"}, status=status.HTTP_403_FORBIDDEN)
+  if BookingParticipant.objects.filter(booking=booking).filter(
+      Q(employee__email=email) | Q(guest__email=email)).exists():
+    return Response({"success": False, "message": "Participant already added"}, status=status.HTTP_400_BAD_REQUEST)
+  curr_capacity= booking.participants.count()+1
+  if curr_capacity >=booking.room.capacity:
+    return Response({"success": False, "message": "Room capacity exceeded"}, status=status.HTTP_400_BAD_REQUEST)
+  
+  if Employee.objects.filter(email=email).exists():
+    emp = Employee.objects.get(email=email)
+    BookingParticipant.objects.create(booking=booking,employee=emp)
+  else:
+    guest = Guest.objects.create(name = email.split('@')[0],email=email)
+    BookingParticipant.create(booking=booking,guest=guest)
+
+@api_view(['DELETE'])
+def remove_participant(request,booking_id):
+  email =request.data.get("participant")
+  if not email:
+    return Response({"success": False, "message": "Participant email is required"}, status=status.HTTP_400_BAD_REQUEST)
+  try:
+    booking = Booking.objects.get(id=booking_id)
+  except Booking.DoesNotExist:
+    return Response({"success": False, "message": "Booking not found"},status=status.HTTP_404_NOT_FOUND)
+    
+  if booking.creator_employee != request.user:
+    return Response({"success": False, "message": "Only creator can remove participants"}, status=status.HTTP_403_FORBIDDEN)
+  
+  participant = BookingParticipant.objects.filter(booking=booking).filter(
+    Q(employee__email = email) | Q(guest__email=email)
+  )
+
+  if not participant:
+    return Response({"success": False, "message": "Participant not found"},status=status.HTTP_404_NOT_FOUND)
+  
+  participant.delete()
+  return Response({"success": True, "message": f"Participant {email} removed"}, status=status.HTTP_200_OK)
+
+
+
+  
+  
+
+
+
+  
+  
+
+  
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
 
 
