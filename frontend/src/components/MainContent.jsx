@@ -1,5 +1,6 @@
 import React from 'react'
 import MainCard from './MainCard';
+import BrowseRoom from '../pages/BrowseRoom';
 
 export default function MainContent({activePage}){
   switch(activePage){
@@ -11,8 +12,9 @@ export default function MainContent({activePage}){
       );
     case "browseRooms":
       return(
-        <div>Browse Rooms page</div>
-
+        <div className="w-full">
+          <BrowseRoom/>
+        </div>
       );
     case "myBookings":
       return <div>My Bookings Page</div>;

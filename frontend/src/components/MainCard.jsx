@@ -29,24 +29,32 @@ useEffect(()=>{
 },[user?.employee_id]);
 
   return(
-    <div className="flex justify-around py-10">
-      <div className="flex flex-col items-center justify-center bg-white outline rounded-xl border-rounded-xl p-4 w-60 h-50">
-        <div className="text-xl text-gray-500 mb-4">Available Rooms Today</div>
+    <div className="flex justify-around py-10 ">
+      <div className="flex flex-col items-center justify-center bg-white outline rounded-xl border-rounded-xl p-4 w-60 h-50 shadow-lg hover:shadow-2xl transition-all duration-300 ">
+        <div className="bg-green-200 p-3 rounded-2xl mb-3">
+          <div className="text-xl text-green-800 mb-1">Available Rooms</div>
+          </div>
         <div className="text-5xl font-bold mb-10">{metrics.availableRooms}</div> 
       </div>
 
-      <div className="flex flex-col items-center justify-center bg-white outline rounded-xl border-rounded-xl  p-4 w-60 h-50">
-        <div className="text-xl text-gray-500 mb-4">Total Rooms</div>
+      <div className="flex flex-col items-center justify-center bg-white outline rounded-xl border-rounded-xl  p-4 w-60 h-50 shadow-lg hover:shadow-2xl transition-all duration-300">
+        <div className="bg-green-200 p-3 rounded-2xl mb-3">
+          <div className="text-xl text-green-800 mb-1">Total Rooms</div>
+        </div>
         <div className="text-5xl font-bold mb-10">{metrics.totalRooms}</div>
       </div>
 
-      <div className="flex flex-col items-center justify-center bg-white outline rounded-xl border-rounded-xl p-4 w-60 h-50">
-        <div className="text-xl text-gray-500 mb-4">Todays Meetings</div>
+      <div className="flex flex-col items-center justify-center bg-white outline rounded-xl border-rounded-xl p-4 w-60 h-50 shadow-lg hover:shadow-2xl transition-all duration-300">
+        <div className="bg-green-200 p-3 rounded-2xl mb-3">
+          <div className="text-xl text-green-800 mb-1">Todays Meetings</div>
+        </div>
         <div className="text-5xl font-bold mb-10">{metrics.todaysMeetings}</div>
       </div>
 
-      <div className="flex flex-col items-center justify-center bg-white outline rounded-xl border-rounded-xl p-4 w-60 h-50">
-          <div className="text-xl text-gray-500 mb-4">Next Week</div>
+      <div className="flex flex-col items-center justify-center bg-white outline rounded-xl border-rounded-xl p-4 w-60 h-50 shadow-lg hover:shadow-2xl transition-all duration-300">
+          <div className="bg-green-200 p-3 rounded-2xl mb-3">
+            <div className="text-xl text-green-800 mb-1">Next Week</div>
+          </div>
           <div className="text-5xl font-bold mb-10">{metrics.nextWeekMeetings}</div>
       </div>
     </div>    

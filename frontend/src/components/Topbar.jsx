@@ -27,7 +27,7 @@ export default function Topbar({activePage}){
       <button  className="mx-2 bg-black text-white px-4 py-3 rounded-md hover:bg-gray-800 active:bg-gray-700 transition cursor-pointer ">
         Notification
       </button>
-      <button onClick={logout} className="mx-2 bg-black text-white px-4 py-3 rounded-md hover:bg-gray-800 active:bg-gray-700 transition cursor-pointer">
+      <button onClick={logout} className="mx-2 bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-400 active:bg-red-300 transition cursor-pointer">
         Logout
       </button>
       
