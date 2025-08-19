@@ -11,11 +11,4 @@ urlpatterns = [
   path('available-rooms/',available_rooms,name="available_rooms"),
   path('room/<int:room_id>/availibility',room_availibility,name='room_availibility'),
   path('book-room/', book_room, name='book_room'),
-  
-
-
-
-  
-
-  
 ] 

@@ -1,18 +1,18 @@
 import React from 'react';
-import  { useState } from 'react';
-import { Home,Users, MapPin, Calendar, Clock, Settings, LogOut,Menu,BookOpen } from 'lucide-react';
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {useAuth} from '../context/AuthContext'
 
 export default function Topbar({activePage}){
   const {user,logout} = useAuth();
-  const pageNames = {
-    dashboard: "Dashboard",
-    browseRooms: "Browse Rooms",
-    myBookings: "My Bookings",
-    history: "Booking History"
+  const location = useLocation();
+  const PageNames = { 
+    '/dashboard': 'Dashboard', 
+    '/dashboard/browse-rooms': 'Browse Rooms',  
+    '/dashboard/my-bookings': 'My Bookings',    
+    '/dashboard/history': 'Booking History'
   };
-  const pageTitle = pageNames[activePage] || activePage;
+  console.log(PageNames[location.pathname])
+  const pageTitle = PageNames[location.pathname] || 'Unknown Page';
 
   return(
     <div className="flex items-center justify-between align-end bg-color-white h-20 border-gray-400 border-1">

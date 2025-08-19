@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect,useContext} from 'react';
 import axios from 'axios';
 
+
 export const AuthContext = createContext();
 export const useAuth = () => {
   return useContext(AuthContext);
@@ -77,7 +78,7 @@ export const AuthProvider = ({children}) =>{
             future_booking:userRes.data.data.future_booking
           });
         } 
-        return userRes.data;
+        return { success: true, message: 'Login successful' };
       }else {
         return { success: false, message: res.data.message || 'Login failed' };
       }
@@ -90,7 +91,7 @@ export const AuthProvider = ({children}) =>{
   const logout = () => {
     localStorage.removeItem('employee_id');
     setUser(null);
-    navigate('/login');
+    navigate('/login');  
 
 
   }

@@ -1,7 +1,7 @@
 import React from "react";
 import {useState,useEffect} from 'react'
-import RoomCard from "../components/BrowseRooms/RoomCard";
-import SearchBar from "../components/BrowseRooms/SearchBar";
+import RoomCard from "./RoomCard";
+import SearchBar from "./SearchBar";
 import axios from "axios";
 
 export default function BrowseRoom(){

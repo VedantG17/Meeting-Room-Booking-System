@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
+import {useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import axios from 'axios';
 import {useAuth} from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar' ;
-import MainContent from '../components/MainContent';
 
 export default function Dashboard(){
   const { user, logout } = useAuth();
-  const [activePage,setActivePage] = useState("dashboard");
-
 
 
   const handleLogout = ()=>{
@@ -17,13 +15,13 @@ export default function Dashboard(){
 
   return (
     <div className="flex min-h-screen">
-      <aside> <Sidebar activePage={activePage} setActivePage={setActivePage}/> </aside>
+      <aside> <Sidebar/> </aside>
       <div className="flex flex-col flex-1">
         <header>
-          <Topbar activePage={activePage} />
+          <Topbar/>
         </header>
         <main className="flex flex-1 bg-gray-100">
-          <MainContent activePage={activePage}/>
+          <Outlet/>
         </main>
       </div>      
     </div>

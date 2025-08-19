@@ -1,6 +1,6 @@
 import React, { useContext,useState} from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { AuthContext } from '../context/AuthContext';
+import {useAuth} from '../context/AuthContext'
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -9,7 +9,7 @@ export default function Login() {
   });
   
   const [errorMessage,setErrorMessage] = useState('');
-  const {login} = useContext(AuthContext);
+  const {login} = useAuth();
   const navigate = useNavigate();
 
 
@@ -32,7 +32,7 @@ export default function Login() {
         setErrorMessage(result.message || 'Login failed. Please check your credentials.');
         alert("Wrong credentials");
       }else{
-        navigate('/dashboard');
+        navigate('/dashboard/');
       }
       }catch(error){
         setErrorMessage('An unexpected error occurred during login. Please try again.');
