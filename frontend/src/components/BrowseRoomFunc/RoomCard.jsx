@@ -15,18 +15,18 @@ export default function RoomCard({name,location,capacity}){
         </div>
         <div className="flex items-center text-gray-700">
           <Users className='w-4 h-4 text-green-500 mr-2 flex-shrink'/>
-          <div className='text-sm font-bold'>{capacity} People</div>
+          <div className='text-m font-bold'>Capacity : {capacity} People</div>
         </div>
       </div>
       {/* divided */}
       <div className= "w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-10"></div>
       {/* buttons sec */}
       <div className="flex gap-10 mb-4 ">
-        <button className="flex px-4 py-3 rounded-md bg-blue-700 hover:bg-blue-500 active:bg-blue-300 transition cursor-pointer">
+        <button className="flex px-4 py-3 rounded-md bg-blue-700 hover:bg-blue-600 active:bg-blue-500 transition cursor-pointer">
           <Eye className="text-white mr-2"/>
           <div className="text-white">Availibilty</div>
         </button>
-        <button className="flex px-3 py-3 rounded-md bg-black hover:bg-gray-800 active:bg-gray-300 transition cursor-pointer">
+        <button className="flex px-3 py-3 rounded-md bg-black hover:bg-gray-800 active:bg-gray-600 transition cursor-pointer">
           
           <Calendar className="text-white mr-2"/>
           <div className="text-white">Book Room</div>

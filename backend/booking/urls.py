@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import signup, verify_otp ,login ,user_profile,list_rooms,dashboard_metrics,available_rooms,room_availibility,book_room,edit_booking,add_participants,remove_participant
+from .views import signup, verify_otp ,login ,user_profile,list_rooms,dashboard_metrics,available_rooms,room_availability,book_room,edit_booking,add_participants,remove_participant
 
 urlpatterns = [
   path('signup/', signup, name='signup'),
@@ -9,6 +9,6 @@ urlpatterns = [
   path('rooms/',list_rooms,name='list_rooms'),
   path('dashboard-metrics/<str:employee_id>/', dashboard_metrics, name='dashboard-metrics'),
   path('available-rooms/',available_rooms,name="available_rooms"),
-  path('room/<int:room_id>/availibility',room_availibility,name='room_availibility'),
+  path('room/<int:room_id>/availability',room_availability,name='room_availibility'),
   path('book-room/', book_room, name='book_room'),
 ] 

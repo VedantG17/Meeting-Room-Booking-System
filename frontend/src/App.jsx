@@ -11,6 +11,7 @@ import History from './pages/History';
 import ProtectedRoute from "./components/ProtectedRoute"
 import { useContext } from 'react';
 import {AuthContext} from './context/AuthContext'
+import { Provider } from 'react-redux';
 
 
 function App() {

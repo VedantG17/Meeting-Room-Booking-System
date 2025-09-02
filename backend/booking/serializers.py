@@ -71,6 +71,7 @@ class AvailabilitySlotSerializer(serializers.Serializer):
 
 class BookingCreateSerializer(serializers.Serializer):
   room_id = serializers.IntegerField()
+  employee_id = serializers.CharField(max_length=50)
   start_time = serializers.DateTimeField()
   end_time = serializers.DateTimeField()
   title = serializers.CharField(allow_blank=True,required=False)
@@ -83,6 +84,13 @@ class BookingCreateSerializer(serializers.Serializer):
     from django.utils import timezone
     start = data['start_time']
     end = data['end_time']
+    employee_id = data.get('employee_id')
+    if not employee_id:
+        raise serializers.ValidationError({"employee_id": "Creator employee ID is required."})
+    try:
+        Employee.objects.get(employee_id=employee_id)
+    except Employee.DoesNotExist:
+        raise serializers.ValidationError({"employee_id": "Employee with this ID does not exist."})
     if end< timezone.now():
       raise serializers.ValidationError("Cant book meeting in past ")
     if end<=start:

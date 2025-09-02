@@ -251,7 +251,7 @@ def available_rooms(request):
   return Response({"success":True,"data":MeetingRoomSerializers(qs,many=True).data},status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-def room_availibility(request, room_id:int):
+def room_availability(request, room_id:int):
   date_str = request.GET.get('date')
   if not date_str:
     return Response({"success":True,"message":"datae is required"},status =status.HTTP_400_BAD_REQUEST)
@@ -292,9 +292,10 @@ def book_room(request):
   #we get this from frontend
   data = serializer.validated_data
   room_id = data['room_id']
-  date = data["date"]
-  start_time = data["start_time"]
-  end_time = data['end_time']
+  employee_id = data['employee_id']
+  booking_date_obj = data['start_time'].date()
+  start_time_obj = data["start_time"].time()
+  end_time_obj = data["end_time"].time()
   participants = data.get("participants",[])
   title = data.get('title','')
   description = data.get('description', '')
